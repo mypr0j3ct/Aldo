@@ -8,8 +8,8 @@
 #include <LittleFS.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <WiFiUdp.h>
 #include <NTPClient.h>
+#include <WiFiUdp.h>
 #include <ArduinoJson.h>
 #include <Firebase_ESP_Client.h>
 #include "addons/TokenHelper.h"
@@ -28,6 +28,7 @@ AsyncWebServer server(80);
 IPAddress localIP;
 IPAddress localGateway;
 IPAddress subnet(255, 255, 0, 0);
+WiFiUDP ntpUDP;
 
 const char* var2Path = "/data/value.txt";
 String agePath = "/Age";
@@ -46,6 +47,7 @@ const char* ssidPath = "/ssid.txt";
 const char* passPath = "/pass.txt";
 const char* ipPath = "/ip.txt";
 const char* gatewayPath = "/gateway.txt";
+String waktu = "";
 String ssid;
 String pass;
 String ip;
@@ -94,6 +96,7 @@ const double a_lp[] = {
   1.0, -5.0256015, 11.03572646, -13.68299448, 10.32280236, -4.73071438,
   1.21779242, -0.13569627
 };
+NTPClient timeClient(ntpUDP, "pool.ntp.org", 7 * 3600, 60000);
 const double b_hp[] = {0.99630444, -1.99260889, 0.99630444};
 const double a_hp[] = {1.0, -1.99259523, 0.99262254};
 FIRFilter notch(b_notch);
@@ -151,8 +154,9 @@ void updateIdDisplay();
 void startWiFiSetup();
 void printSavedData();
 String getTimestamp();
-void sendDataToFirebase();
 void menuWiFiAtauLanjut();
+void sendDataToFirebase();
+void menu1WiFiAtauLanjut();
 bool isButtonPressed(int pin);
 void menuKirimFirebaseAtauLanjut();
 void createDir(fs::FS &fs, const char *path);
@@ -165,7 +169,7 @@ float getProbabilitySex(String sex, String condition);
 float getProbabilityRestingBP(int bp, String condition);
 float getProbabilityMaxHR(int hr, String condition);
 float getProbabilitySTSlope(String slope, String condition);
-void saveSelectedDataToJson(int ValueID, int ValueAge, int ValueBP, int ValueHR, String ValueSex, String ValueST, String ValuePred);
+void saveSelectedDataToJson(int ValueID, int ValueAge, int ValueBP, int ValueHR, String ValueSex, String ValueST, String ValuePred, String waktu);
 
 void setup() {
   Serial.begin(115200);
@@ -182,7 +186,7 @@ void setup() {
   initLittleFS();
   createDir(LittleFS, "/data");
   welcomeScreen();
-  menuWiFiAtauLanjut(); 
+  menuWiFiAtauLanjut();
   startTime = millis();
   //deleteFile(LittleFS, var2Path);
 }
@@ -657,6 +661,13 @@ void resetDetection() {
 }
 
 void heartRate() {
+  waktu = getTimestamp();
+  delay(1000);
+  Serial.print("Waktu dari NTP (RTC online): ");
+  Serial.println(waktu);
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
+  Serial.println("WiFi dimatikan!");
   lcd.clear();
   while (true) {
     lcd.setCursor(0, 0);
@@ -706,8 +717,7 @@ void hrSensor() {
   lcd.clear();
   if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) {
     Serial.println("MAX30105 was not found. Please check wiring/power.");
-    while (1)
-      ;
+    while (1);
   }
   particleSensor.setup();
   particleSensor.setPulseAmplitudeRed(0x0A);
@@ -824,8 +834,10 @@ void NaiveBayes() {
   lcd.print(probYes > probNo ? "Berpeluang" : "Tidak Berpeluang");
   ValuePred = (probYes > probNo) ? "Berpeluang" : "Tidak Berpeluang";
   melihat();
-  saveSelectedDataToJson(ValueID, ValueAge, ValueBP, ValueHR, ValueSex, ValueST, ValuePred);
+  saveSelectedDataToJson(ValueID, ValueAge, ValueBP, ValueHR, ValueSex, ValueST, ValuePred, waktu);
   printSavedData();
+  delay(2000);
+  ESP.restart();
   while (true) {
     if (isButtonPressed(buttonLeft)) {
       konfirmasiUlang();
@@ -852,11 +864,56 @@ void menuWiFiAtauLanjut() {
         startWiFiSetup();
         break; 
       } else {
-        menuKirimFirebaseAtauLanjut();
+        menu1WiFiAtauLanjut();
         break; 
       }
     }
   }
+}
+
+void ensureWiFiConnected() {
+  ssid = readFile(LittleFS, ssidPath);
+  pass = readFile(LittleFS, passPath);
+  while (ssid == "" || pass == "") {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("WiFi belum diatur");
+    lcd.setCursor(0, 1);
+    lcd.print("Silakan atur WiFi");
+    delay(1500);
+    startWiFiSetup();
+    ssid = readFile(LittleFS, ssidPath);
+    pass = readFile(LittleFS, passPath);
+  }
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Menyambung WiFi...");
+  WiFi.mode(WIFI_STA);
+  while (WiFi.status() != WL_CONNECTED) {
+    WiFi.begin(ssid.c_str(), pass.c_str());
+    int retry = 0;
+    while (WiFi.status() != WL_CONNECTED && retry < 30) {
+      delay(500);
+      retry++;
+    }
+    if (WiFi.status() != WL_CONNECTED) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Gagal terhubung!");
+      lcd.setCursor(0, 1);
+      lcd.print("Mencoba ulang...");
+      delay(1500);
+    }
+  }
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("WiFi Terhubung!");
+  delay(1000);
+}
+
+void menu1WiFiAtauLanjut() {
+  ensureWiFiConnected();
+  menuKirimFirebaseAtauLanjut();
 }
 
 void menuKirimFirebaseAtauLanjut() {
@@ -874,7 +931,11 @@ void menuKirimFirebaseAtauLanjut() {
     }
     if (isButtonPressed(buttonRight)) {
       if (pilihYes) {
-        initWiFi();
+        if (WiFi.status() != WL_CONNECTED) {
+          ensureWiFiConnected();
+        }
+        setupFirebase();
+        sendDataToFirebase();
         break;
       } else {
         idUser();
@@ -1002,6 +1063,39 @@ void appendToFile(fs::FS &fs, const char *path, const char *message) {
   file.close();
 }
 
+void printSavedData() {
+  File file = LittleFS.open(var2Path, FILE_READ);
+  if (!file) {
+    Serial.println("File tidak ditemukan!");
+    return;
+  }
+  while (file.available()) {
+    Serial.write(file.read());
+  }
+  file.close();
+  Serial.println();
+}
+
+String getTimestamp() {
+  timeClient.update(); 
+  unsigned long epochTime = timeClient.getEpochTime();
+  if (epochTime < 1577836800UL) {
+    Serial.println("[ERROR] NTP belum sinkron! epoch: " + String(epochTime) + ". Mengembalikan default timestamp.");
+    return "1970-01-01T00:00:00+07:00"; 
+  }
+  time_t epoch_for_gmtime = epochTime; 
+  struct tm *ptm = gmtime(&epoch_for_gmtime);
+  if (!ptm) {
+    Serial.println("[ERROR] gmtime gagal mengkonversi epoch: " + String(epoch_for_gmtime));
+    return "0000-00-00T00:00:00+07:00"; 
+  }
+  char buffer[26];  
+  snprintf(buffer, sizeof(buffer), "%04d-%02d-%02dT%02d:%02d:%02d+07:00",
+           ptm->tm_year + 1900, ptm->tm_mon + 1, ptm->tm_mday,
+           ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
+  return String(buffer);
+}
+
 void startWiFiSetup() {
   WiFi.softAP("ESP-WIFI-MANAGER", NULL);
   IPAddress IP = WiFi.softAPIP();
@@ -1093,29 +1187,30 @@ void setupFirebase() {
   Firebase.reconnectWiFi(true);
 }
 
-void saveSelectedDataToJson(int ValueID, int ValueAge, int ValueBP, int ValueHR, String ValueSex, String ValueST, String ValuePred) {
+void saveSelectedDataToJson(int ValueID, int ValueAge, int ValueBP, int ValueHR, String ValueSex, String ValueST, String ValuePred, String waktu) {
   DynamicJsonDocument doc(8192);
   File file = LittleFS.open(var2Path, FILE_READ);
   if (file) {
     DeserializationError error = deserializeJson(doc, file);
     file.close();
-    if (error || !doc["sensor"] || !doc["sensor"].is<JsonArray>()) {
+    if (error || !doc["sensor"] || !doc["sensor"].is<JsonObject>()) {
       doc.clear();
-      doc.createNestedArray("sensor");
+      doc.createNestedObject("sensor");
     }
   } else {
     doc.clear();
-    doc.createNestedArray("sensor");
+    doc.createNestedObject("sensor");
   }
-  JsonArray sensorArr = doc["sensor"].as<JsonArray>();
-  JsonObject data = sensorArr.createNestedObject();
-  data["ValueID"] = ValueID;
-  data["ValueAge"] = ValueAge;
-  data["ValueBP"] = ValueBP;
-  data["ValueHR"] = ValueHR;
-  data["ValueSex"] = ValueSex;
-  data["ValueST"] = ValueST;
-  data["ValuePred"] = ValuePred;
+  JsonObject sensorObj = doc["sensor"].as<JsonObject>();
+  JsonObject data = sensorObj.createNestedObject(waktu);
+  data["Age"] = String(ValueAge);
+  data["Blood_Pressure"] = String(ValueBP);
+  data["Max_HR"] = String(ValueHR);
+  data["Prediction"] = ValuePred;
+  data["ST_Slope"] = ValueST;
+  data["Sex"] = ValueSex;
+  data["idmicro"] = String(ValueID);
+  data["timestamp"] = waktu;
   file = LittleFS.open(var2Path, FILE_WRITE);
   if (!file) {
     Serial.println("Gagal membuka file untuk menulis.");
@@ -1123,7 +1218,7 @@ void saveSelectedDataToJson(int ValueID, int ValueAge, int ValueBP, int ValueHR,
   }
   serializeJson(doc, file);
   file.close();
-  Serial.println("Data berhasil DITAMBAHKAN ke file JSON di LittleFS (ARRAY MODE)");
+  Serial.println("Data berhasil DITAMBAHKAN ke file JSON di LittleFS (KEY = WAKTU, STRUCTURE SAMA DENGAN PERMINTAAN)");
 }
 
 void sendDataToFirebase() {
@@ -1143,39 +1238,32 @@ void sendDataToFirebase() {
     Serial.println("Gagal parse JSON dari file data!");
     return;
   }
-  if (!doc.containsKey("sensor") || !doc["sensor"].is<JsonArray>()) {
-    Serial.println("Format JSON tidak sesuai (tidak ada array 'sensor').");
+  if (!doc.containsKey("sensor") || !doc["sensor"].is<JsonObject>()) {
+    Serial.println("Format JSON tidak sesuai (tidak ada object 'sensor').");
     return;
   }
-  JsonArray sensorArr = doc["sensor"].as<JsonArray>();
-  bool allDataSent = true;
-  int index = 0;
-  for (JsonObject dataObj : sensorArr) {
-    FirebaseJson json;
-    json.set(idPath.c_str(), dataObj["ValueID"].as<String>());
-    json.set(agePath.c_str(), dataObj["ValueAge"].as<String>());
-    json.set(bloodPath.c_str(), dataObj["ValueBP"].as<String>());
-    json.set(heartPath.c_str(), dataObj["ValueHR"].as<String>());
-    json.set(sexPath.c_str(), dataObj["ValueSex"].as<String>());
-    json.set(slopePath.c_str(), dataObj["ValueST"].as<String>());
-    json.set(predPath.c_str(), dataObj["ValuePred"].as<String>());
-    String databasePath = "/sensor/" + String(index); 
-    if (Firebase.RTDB.setJSON(&fbdo, databasePath.c_str(), &json)) {
-      Serial.print("Data ke-");
-      Serial.print(index);
-      Serial.println(" berhasil dikirim ke Firebase.");
-    } else {
-      Serial.print("Gagal mengirim data ke-");
-      Serial.print(index);
-      Serial.print(". Error: ");
-      Serial.println(fbdo.errorReason());
-      allDataSent = false;
-    }
-    index++;
+  JsonObject sensorObj = doc["sensor"].as<JsonObject>();
+  FirebaseJson firebaseDataJson;
+  FirebaseJson sensorFirebaseJson;
+  for (JsonPair kv : sensorObj) {
+    const char* timestamp = kv.key().c_str();
+    JsonObject dataObj = kv.value().as<JsonObject>();
+    FirebaseJson singleDataJson;
+    singleDataJson.set("Age", dataObj["Age"].as<String>());
+    singleDataJson.set("Blood_Pressure", dataObj["Blood_Pressure"].as<String>());
+    singleDataJson.set("Max_HR", dataObj["Max_HR"].as<String>());
+    singleDataJson.set("Prediction", dataObj["Prediction"].as<String>());
+    singleDataJson.set("ST_Slope", dataObj["ST_Slope"].as<String>());
+    singleDataJson.set("Sex", dataObj["Sex"].as<String>());
+    singleDataJson.set("idmicro", dataObj["idmicro"].as<String>());
+    singleDataJson.set("timestamp", dataObj["timestamp"].as<String>());
+    sensorFirebaseJson.set(timestamp, singleDataJson);
   }
-  if (allDataSent) {
+  firebaseDataJson.set("sensor", sensorFirebaseJson);
+  bool ok = Firebase.RTDB.setJSON(&fbdo, "/", &firebaseDataJson);
+  if (ok) {
+    Serial.println("Semua data berhasil dikirim ke Firebase sesuai struktur yang diminta.");
     deleteFile(LittleFS, var2Path);
-    Serial.println("Semua data berhasil dikirim & file lokal dihapus.");
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Data terkirim!");
@@ -1184,38 +1272,12 @@ void sendDataToFirebase() {
     lcd.setCursor(0, 0);
     lcd.print("ESP32 Restart");
     ESP.restart();
+  } else {
+    Serial.print("Gagal mengirim data ke Firebase. Error: ");
+    Serial.println(fbdo.errorReason());
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Gagal kirim data");
+    delay(2000);
   }
-}
-
-void printSavedData() {
-  File file = LittleFS.open(var2Path, FILE_READ);
-  if (!file) {
-    Serial.println("File tidak ditemukan!");
-    return;
-  }
-  while (file.available()) {
-    Serial.write(file.read());
-  }
-  file.close();
-  Serial.println();
-}
-
-String getTimestamp() {
-  timeClient.update(); 
-  unsigned long epochTime = timeClient.getEpochTime();
-  if (epochTime < 1577836800UL) {
-    Serial.println("[ERROR] NTP belum sinkron! epoch: " + String(epochTime) + ". Mengembalikan default timestamp.");
-    return "1970-01-01T00:00:00+07:00"; 
-  }
-  time_t epoch_for_gmtime = epochTime; 
-  struct tm *ptm = gmtime(&epoch_for_gmtime);
-  if (!ptm) {
-    Serial.println("[ERROR] gmtime gagal mengkonversi epoch: " + String(epoch_for_gmtime));
-    return "0000-00-00T00:00:00+07:00"; 
-  }
-  char buffer[26];  
-  snprintf(buffer, sizeof(buffer), "%04d-%02d-%02dT%02d:%02d:%02d+07:00",
-           ptm->tm_year + 1900, ptm->tm_mon + 1, ptm->tm_mday,
-           ptm->tm_hour, ptm->tm_min, ptm->tm_sec);
-  return String(buffer);
 }
