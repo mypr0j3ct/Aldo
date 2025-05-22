@@ -912,7 +912,57 @@ void ensureWiFiConnected() {
 }
 
 void menu1WiFiAtauLanjut() {
-  ensureWiFiConnected();
+  ensureWiFiConnected(); 
+  if (WiFi.status() == WL_CONNECTED) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Sinkron Waktu");
+    Serial.println("Memulai sinkronisasi waktu NTP...");
+    timeClient.begin(); 
+    unsigned long ntpAttemptStart = millis();
+    bool ntpSuccess = false;
+    int dots = 0;
+    String progressMsg = "Mencoba NTP";
+    while (millis() - ntpAttemptStart < 30000) {
+      lcd.setCursor(0, 1);
+      String currentProgress = progressMsg;
+      for(int i=0; i<dots; ++i) currentProgress += ".";
+      for(int i=dots; i<4; ++i) currentProgress += " "; 
+      lcd.print(currentProgress.substring(0,16)); 
+      dots = (dots + 1) % 5; 
+      if (timeClient.forceUpdate()) { 
+        unsigned long epochTime = timeClient.getEpochTime();
+        Serial.println("NTP forceUpdate berhasil, epoch: " + String(epochTime));
+        if (epochTime > 1577836800UL) { 
+          Serial.println("NTP Berhasil disinkronkan.");
+          lcd.setCursor(0, 1);
+          lcd.print("Waktu OK!         ");
+          ntpSuccess = true;
+          delay(1500); 
+          break;
+        } else {
+          Serial.println("NTP update OK, tapi waktu masih belum valid (epoch: " + String(epochTime) + ")");
+        }
+      } else {
+        Serial.println("NTP forceUpdate gagal.");
+      }
+      delay(1000); 
+    }
+    if (!ntpSuccess) {
+      Serial.println("Gagal sinkronisasi NTP setelah 30 detik. Waktu mungkin tidak akurat.");
+      lcd.setCursor(0, 1);
+      lcd.print("NTP Gagal.        ");
+      delay(2000); 
+    }
+  } else {
+    Serial.println("WiFi tidak terhubung, tidak bisa sinkronisasi NTP.");
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("WiFi Offline");
+    lcd.setCursor(0,1);
+    lcd.print("NTP Tidak Bisa  ");
+    delay(2000);
+  }
   menuKirimFirebaseAtauLanjut();
 }
 
@@ -1243,8 +1293,7 @@ void sendDataToFirebase() {
     return;
   }
   JsonObject sensorObj = doc["sensor"].as<JsonObject>();
-  FirebaseJson firebaseDataJson;
-  FirebaseJson sensorFirebaseJson;
+  bool allSuccess = true;
   for (JsonPair kv : sensorObj) {
     const char* timestamp = kv.key().c_str();
     JsonObject dataObj = kv.value().as<JsonObject>();
@@ -1257,11 +1306,18 @@ void sendDataToFirebase() {
     singleDataJson.set("Sex", dataObj["Sex"].as<String>());
     singleDataJson.set("idmicro", dataObj["idmicro"].as<String>());
     singleDataJson.set("timestamp", dataObj["timestamp"].as<String>());
-    sensorFirebaseJson.set(timestamp, singleDataJson);
+    String path = String("/sensor/") + timestamp;
+    if (Firebase.RTDB.setJSON(&fbdo, path.c_str(), &singleDataJson)) {
+      Serial.println("Data berhasil dikirim ke Firebase di path: " + path);
+    } else {
+      Serial.print("Gagal mengirim data ke Firebase di path: ");
+      Serial.print(path);
+      Serial.print(". Error: ");
+      Serial.println(fbdo.errorReason());
+      allSuccess = false;
+    }
   }
-  firebaseDataJson.set("sensor", sensorFirebaseJson);
-  bool ok = Firebase.RTDB.setJSON(&fbdo, "/", &firebaseDataJson);
-  if (ok) {
+  if (allSuccess) {
     Serial.println("Semua data berhasil dikirim ke Firebase sesuai struktur yang diminta.");
     deleteFile(LittleFS, var2Path);
     lcd.clear();
@@ -1273,8 +1329,7 @@ void sendDataToFirebase() {
     lcd.print("ESP32 Restart");
     ESP.restart();
   } else {
-    Serial.print("Gagal mengirim data ke Firebase. Error: ");
-    Serial.println(fbdo.errorReason());
+    Serial.println("Beberapa data gagal dikirim ke Firebase.");
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Gagal kirim data");
