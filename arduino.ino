@@ -831,11 +831,17 @@ void NaiveBayes() {
   lcd.setCursor(0, 0);
   lcd.print("Hasil Prediksi:");
   lcd.setCursor(0, 1);
-  lcd.print(probYes > probNo ? "Berpeluang" : "Tidak Berpeluang");
+  lcd.print(probYes > probNo ? "Berpeluang" : "Tdk Berpeluang");
   ValuePred = (probYes > probNo) ? "Berpeluang" : "Tidak Berpeluang";
   melihat();
   saveSelectedDataToJson(ValueID, ValueAge, ValueBP, ValueHR, ValueSex, ValueST, ValuePred, waktu);
   printSavedData();
+  delay(2000);
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Simpan Selesai!");
+  lcd.setCursor(0, 1);
+  lcd.print("Restart ESP32...");
   delay(2000);
   ESP.restart();
   while (true) {
@@ -877,9 +883,9 @@ void ensureWiFiConnected() {
   while (ssid == "" || pass == "") {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("WiFi belum diatur");
+    lcd.print("WiFi Belum Diatur");
     lcd.setCursor(0, 1);
-    lcd.print("Silakan atur WiFi");
+    lcd.print("Atur WiFi Dulu!");
     delay(1500);
     startWiFiSetup();
     ssid = readFile(LittleFS, ssidPath);
@@ -887,28 +893,34 @@ void ensureWiFiConnected() {
   }
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Menyambung WiFi...");
+  lcd.print("Sambung WiFi...");
+  lcd.setCursor(0, 1);
+  lcd.print(ssid);
   WiFi.mode(WIFI_STA);
   while (WiFi.status() != WL_CONNECTED) {
     WiFi.begin(ssid.c_str(), pass.c_str());
     int retry = 0;
     while (WiFi.status() != WL_CONNECTED && retry < 30) {
       delay(500);
+      lcd.setCursor(0, 1);
+      lcd.print("Mencoba...");
       retry++;
     }
     if (WiFi.status() != WL_CONNECTED) {
       lcd.clear();
       lcd.setCursor(0, 0);
-      lcd.print("Gagal terhubung!");
+      lcd.print("WiFi Gagal!");
       lcd.setCursor(0, 1);
-      lcd.print("Mencoba ulang...");
+      lcd.print("Coba Lagi...");
       delay(1500);
     }
   }
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("WiFi Terhubung!");
-  delay(1000);
+  lcd.setCursor(0, 1);
+  lcd.print(WiFi.localIP().toString());
+  delay(1500);
 }
 
 void menu1WiFiAtauLanjut() {
@@ -916,29 +928,31 @@ void menu1WiFiAtauLanjut() {
   if (WiFi.status() == WL_CONNECTED) {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("Sinkron Waktu");
+    lcd.print("Sinkron Waktu...");
     Serial.println("Memulai sinkronisasi waktu NTP...");
     timeClient.begin(); 
     unsigned long ntpAttemptStart = millis();
     bool ntpSuccess = false;
     int dots = 0;
-    String progressMsg = "Mencoba NTP";
     while (millis() - ntpAttemptStart < 30000) {
       lcd.setCursor(0, 1);
-      String currentProgress = progressMsg;
-      for(int i=0; i<dots; ++i) currentProgress += ".";
-      for(int i=dots; i<4; ++i) currentProgress += " "; 
-      lcd.print(currentProgress.substring(0,16)); 
-      dots = (dots + 1) % 5; 
+      String dotsStr = "Mencoba";
+      for (int i = 0; i < dots; i++) dotsStr += ".";
+      for (int i = dots; i < 4; i++) dotsStr += " ";
+      lcd.print(dotsStr.substring(0, 16));
+      dots = (dots + 1) % 5;
       if (timeClient.forceUpdate()) { 
         unsigned long epochTime = timeClient.getEpochTime();
         Serial.println("NTP forceUpdate berhasil, epoch: " + String(epochTime));
         if (epochTime > 1577836800UL) { 
           Serial.println("NTP Berhasil disinkronkan.");
+          lcd.clear();
+          lcd.setCursor(0, 0);
+          lcd.print("Waktu Tersinkron");
           lcd.setCursor(0, 1);
-          lcd.print("Waktu OK!         ");
+          lcd.print(timeClient.getFormattedTime());
           ntpSuccess = true;
-          delay(1500); 
+          delay(1500);
           break;
         } else {
           Serial.println("NTP update OK, tapi waktu masih belum valid (epoch: " + String(epochTime) + ")");
@@ -950,17 +964,20 @@ void menu1WiFiAtauLanjut() {
     }
     if (!ntpSuccess) {
       Serial.println("Gagal sinkronisasi NTP setelah 30 detik. Waktu mungkin tidak akurat.");
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Sinkron Gagal!");
       lcd.setCursor(0, 1);
-      lcd.print("NTP Gagal.        ");
+      lcd.print("Waktu Tidak Akurat");
       delay(2000); 
     }
   } else {
     Serial.println("WiFi tidak terhubung, tidak bisa sinkronisasi NTP.");
     lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("WiFi Offline");
-    lcd.setCursor(0,1);
-    lcd.print("NTP Tidak Bisa  ");
+    lcd.setCursor(0, 0);
+    lcd.print("WiFi Offline!");
+    lcd.setCursor(0, 1);
+    lcd.print("NTP Tidak Bisa");
     delay(2000);
   }
   menuKirimFirebaseAtauLanjut();
@@ -1153,9 +1170,9 @@ void startWiFiSetup() {
   Serial.println(IP); 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Mengatur WiFi...");
+  lcd.print("WiFi Setup");
   lcd.setCursor(0, 1);
-  lcd.print(IP);
+  lcd.print(IP.toString());
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(LittleFS, "/wifimanager.html", "text/html");
   });
@@ -1202,13 +1219,28 @@ void initWiFi() {
   ssid = readFile(LittleFS, ssidPath);
   pass = readFile(LittleFS, passPath);
   if (ssid == "") {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("WiFi Belum Diatur");
+    lcd.setCursor(0, 1);
+    lcd.print("Atur WiFi Dulu!");
+    delay(2000);
     return;
   }
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Sambung WiFi...");
+  lcd.setCursor(0, 1);
+  lcd.print(ssid);
   WiFi.mode(WIFI_STA);
   if (ip != "") {
     localIP.fromString(ip.c_str());
     localGateway.fromString(gateway.c_str());
     if (!WiFi.config(localIP, localGateway, subnet)) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Konfigurasi Gagal");
+      delay(1500);
     }
   }
   WiFi.begin(ssid.c_str(), pass.c_str());
@@ -1217,10 +1249,24 @@ void initWiFi() {
   while (WiFi.status() != WL_CONNECTED) {
     currentMillis = millis();
     if (currentMillis - previousMillis >= intervalWifi) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("WiFi Gagal!");
+      lcd.setCursor(0, 1);
+      lcd.print("Restart ESP32...");
+      delay(2000);
       ESP.restart();
     }
+    delay(500);
+    lcd.setCursor(0, 1);
+    lcd.print("Mencoba...");
   }
-  delay(500);
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("WiFi Terhubung!");
+  lcd.setCursor(0, 1);
+  lcd.print(WiFi.localIP().toString());
+  delay(1500);
   setupFirebase();
   sendDataToFirebase();
 }
@@ -1274,11 +1320,24 @@ void saveSelectedDataToJson(int ValueID, int ValueAge, int ValueBP, int ValueHR,
 void sendDataToFirebase() {
   if (!Firebase.ready()) {
     Serial.println("Firebase tidak siap!");
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Firebase Tidak Siap");
+    delay(2000);
     return;
   }
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Kirim ke Firebase");
+  lcd.setCursor(0, 1);
+  lcd.print("Mengirim...");
   File file = LittleFS.open(var2Path, FILE_READ);
   if (!file) {
     Serial.println("Gagal membuka file data di LittleFS.");
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Gagal Buka File!");
+    delay(2000);
     return;
   }
   DynamicJsonDocument doc(8192);
@@ -1286,10 +1345,18 @@ void sendDataToFirebase() {
   file.close();
   if (error) {
     Serial.println("Gagal parse JSON dari file data!");
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Gagal Parse JSON!");
+    delay(2000);
     return;
   }
   if (!doc.containsKey("sensor") || !doc["sensor"].is<JsonObject>()) {
     Serial.println("Format JSON tidak sesuai (tidak ada object 'sensor').");
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("JSON Tidak Valid!");
+    delay(2000);
     return;
   }
   JsonObject sensorObj = doc["sensor"].as<JsonObject>();
@@ -1322,17 +1389,18 @@ void sendDataToFirebase() {
     deleteFile(LittleFS, var2Path);
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("Data terkirim!");
-    delay(1000);
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("ESP32 Restart");
+    lcd.print("Data Terkirim!");
+    lcd.setCursor(0, 1);
+    lcd.print("Restart ESP32...");
+    delay(2000);
     ESP.restart();
   } else {
     Serial.println("Beberapa data gagal dikirim ke Firebase.");
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("Gagal kirim data");
+    lcd.print("Gagal Kirim Data!");
+    lcd.setCursor(0, 1);
+    lcd.print("Cek Koneksi!");
     delay(2000);
   }
 }
