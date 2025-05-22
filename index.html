@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home</title>
+  <script type="module" src="./config-sdk.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="20" cy="80" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+      pointer-events: none;
+    }
+
+    .main-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+      position: relative;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .welcome-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .user-avatar {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .welcome-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .welcome-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a1a1a;
+      letter-spacing: -0.3px;
+    }
+
+    .username {
+      font-size: 14px;
+      color: #667eea;
+      font-weight: 500;
+    }
+
+    .logout-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logout-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .logout-btn:active {
+      transform: translateY(0);
+    }
+
+    .controls-section {
+      background: rgba(102, 126, 234, 0.05);
+      border: 1px solid rgba(102, 126, 234, 0.1);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+
+    .controls-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-sort-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      align-items: end;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-group label {
+      font-size: 14px;
+      color: #555;
+      font-weight: 500;
+      letter-spacing: -0.1px;
+    }
+
+    .input-group select {
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 2px solid #e8e8e8;
+      font-size: 14px;
+      font-weight: 500;
+      background: #fafafa;
+      transition: all 0.3s ease;
+      color: #1a1a1a;
+      cursor: pointer;
+    }
+
+    .input-group select:focus {
+      border-color: #667eea;
+      background: #ffffff;
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .sort-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .sort-btn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      justify-content: center;
+    }
+
+    .sort-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .sort-btn:active {
+      transform: translateY(0);
+    }
+
+    .data-section {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(102, 126, 234, 0.1);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    .table-header {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 20px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      max-height: 60vh;
+      position: relative;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th,
+    td {
+      padding: 16px 20px;
+      text-align: left;
+      border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    th {
+      background: rgba(102, 126, 234, 0.05);
+      color: #1a1a1a;
+      font-weight: 600;
+      text-align: left;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    td:first-child,
+    th:first-child {
+      text-align: center;
+      font-weight: 600;
+    }
+
+    tbody tr {
+      transition: all 0.2s ease;
+    }
+
+    tbody tr:hover {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+      transform: scale(1.005);
+      box-shadow: 0 2px 10px rgba(102, 126, 234, 0.15);
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(102, 126, 234, 0.02);
+    }
+
+    tbody tr:nth-child(even):hover {
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+      font-style: italic;
+      background: rgba(102, 126, 234, 0.02);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 15px;
+      }
+
+      .container {
+        padding: 24px 20px;
+      }
+
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+
+      .welcome-section {
+        width: 100%;
+      }
+
+      .logout-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 14px 24px;
+        font-size: 15px;
+      }
+
+      .controls-section {
+        padding: 20px 16px;
+        margin-bottom: 24px;
+      }
+
+      .filter-sort-container {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .sort-buttons {
+        grid-column: 1 / -1;
+      }
+
+      .table-header {
+        padding: 16px 20px;
+        font-size: 15px;
+      }
+
+      th,
+      td {
+        padding: 12px 16px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+
+      .container {
+        padding: 20px 15px;
+        border-radius: 16px;
+      }
+
+      .user-avatar {
+        width: 40px;
+        height: 40px;
+      }
+
+      .welcome-title {
+        font-size: 16px;
+      }
+
+      .username {
+        font-size: 13px;
+      }
+
+      .controls-section {
+        padding: 16px 12px;
+        margin-bottom: 20px;
+      }
+
+      .controls-title {
+        font-size: 15px;
+        margin-bottom: 16px;
+      }
+
+      .input-group select {
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+
+      .sort-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+      }
+
+      .table-header {
+        padding: 12px 16px;
+        font-size: 14px;
+      }
+
+      .table-wrapper {
+        max-height: 50vh;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        font-size: 12px;
+      }
+
+      .no-data {
+        padding: 40px 15px;
+        font-size: 13px;
+      }
+    }
+
+    @media (max-width: 414px) and (max-height: 846px) {
+      .table-wrapper {
+        max-height: 45vh;
+      }
+      
+      .filter-sort-container {
+        gap: 12px;
+      }
+      
+      .sort-buttons {
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .sort-btn {
+        flex: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main-container">
+    <div class="container">
+      <div class="header">
+        <div class="welcome-section">
+          <div class="user-avatar">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" fill="white"/>
+              <path d="M12 14C8.13401 14 5 17.134 5 21H19C19 17.134 15.866 14 12 14Z" fill="white"/>
+            </svg>
+          </div>
+          <div class="welcome-text">
+            <div class="welcome-title">Selamat datang kembali</div>
+            <div class="username" id="usernameDisplay"></div>
+          </div>
+        </div>
+        <button class="logout-btn" id="logoutButton">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 17L21 12L16 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Keluar
+        </button>
+      </div>
+
+      <div class="controls-section">
+        <div class="controls-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 6H21M9 12H21M3 18H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Pengaturan Tampilan Data
+        </div>
+        <div class="filter-sort-container">
+          <div class="input-group">
+            <label for="filterSelect">Filter Waktu</label>
+            <select id="filterSelect">
+              <option value="alltime">Seluruh Waktu</option>
+              <option value="today">Hari ini</option>
+              <option value="3weeks">3 Minggu yang lalu</option>
+              <option value="6months">6 Bulan yang lalu</option>
+              <option value="1year">1 Tahun yang lalu</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="sortColumn">Kolom Pengurutan</label>
+            <select id="sortColumn">
+              <option value="timestamp">Waktu</option>
+              <option value="Blood_Pressure">Blood Pressure</option>
+              <option value="Max_HR">Heart Rate</option>
+              <option value="ST_Slope">ST Slope</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Aksi Pengurutan</label>
+            <div class="sort-buttons">
+              <button class="sort-btn" id="sortAsc">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M7 14L12 9L17 14H7Z" fill="currentColor"/>
+                </svg>
+                Naik
+              </button>
+              <button class="sort-btn" id="sortDesc">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M7 10L12 15L17 10H7Z" fill="currentColor"/>
+                </svg>
+                Turun
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="data-section">
+        <div class="table-header">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 6H20M4 12H20M4 18H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Data Sensor Kesehatan
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Usia</th>
+                <th>Sex</th>
+                <th>Blood Pressure</th>
+                <th>ST Slope</th>
+                <th>Heart Rate</th>
+                <th>Heart Failure Prediction</th>
+                <th>Waktu</th>
+              </tr>
+            </thead>
+            <tbody id="sensorData">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      getDatabase,
+      ref,
+      get
+    } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+    import {
+      app
+    } from "./config-sdk.js";
+
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const isAdmin = localStorage.getItem('username') === 'Super Admin';
+
+    if (!isLoggedIn) {
+      location.replace('masuk.html');
+    } else if (isAdmin) {
+      location.replace('admin.html');
+    }
+
+    history.pushState(null, null, window.location.href);
+    window.addEventListener('popstate', function () {
+      history.pushState(null, null, window.location.href);
+    });
+
+    const usernameDisplay = document.getElementById('usernameDisplay');
+    const storedUsername = localStorage.getItem('username');
+    if (storedUsername) {
+      usernameDisplay.textContent = storedUsername;
+    }
+
+    const logoutButton = document.getElementById('logoutButton');
+    logoutButton.addEventListener('click', () => {
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('username');
+      localStorage.removeItem('idmicro');
+      location.replace('masuk.html');
+    });
+
+    const db = getDatabase(app);
+    const sensorRef = ref(db, 'sensor');
+    const user_idmicro = String(localStorage.getItem('idmicro'));
+    const tableBody = document.getElementById('sensorData');
+
+    function normalizeTimestamp(timestamp) {
+      if (typeof timestamp === 'string' && timestamp.endsWith('+07:0')) {
+        return timestamp.replace(/\+07:0$/, "+07:00");
+      }
+      return timestamp;
+    }
+
+    function formatTimestamp(rawTimestamp) {
+      if (!rawTimestamp || typeof rawTimestamp !== 'string')
+        return "Timestamp Tidak Valid";
+      const normalizedTimestamp = normalizeTimestamp(rawTimestamp);
+      try {
+        const date = new Date(normalizedTimestamp);
+        if (isNaN(date.getTime())) {
+          const timestampMatch = normalizedTimestamp.match(
+            /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?([+-]\d{2}:\d{2}|Z)$/
+          );
+          if (!timestampMatch) return "Format Timestamp Tidak Valid";
+          const [_, year, month, day, hours, minutes] = timestampMatch;
+          const months = [
+            "Januari",
+            "Februari",
+            "Maret",
+            "April",
+            "Mei",
+            "Juni",
+            "Juli",
+            "Agustus",
+            "September",
+            "Oktober",
+            "November",
+            "Desember",
+          ];
+          const monthName = months[parseInt(month) - 1];
+          return `${parseInt(day)} ${monthName} ${year}, ${hours}:${minutes} WIB`;
+        }
+        const formatter = new Intl.DateTimeFormat('id-ID', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'Asia/Jakarta',
+          hour12: false
+        });
+        let formatted = formatter.format(date);
+        formatted = formatted.replace(/, /g, ' ').replace('pukul ', '').replace('.', ':');
+        if (!formatted.includes('WIB')) {
+          const timePart = formatted.substring(formatted.lastIndexOf(' ') + 1);
+          if (/\d{2}:\d{2}/.test(timePart)) {
+            formatted = formatted.replace(timePart, timePart + ' WIB');
+          } else {
+            formatted += ' WIB';
+          }
+        }
+        return formatted;
+      } catch (e) {
+        console.error("Error formatting date:", normalizedTimestamp, e);
+        return "Error Format Tanggal";
+      }
+    }
+
+    function getDateLimit(timeFilter) {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      let dateLimit = new Date(now.getTime());
+
+      switch (timeFilter) {
+        case 'today':
+          break;
+        case '3weeks':
+          dateLimit.setDate(dateLimit.getDate() - 21);
+          break;
+        case '6months':
+          dateLimit.setMonth(dateLimit.getMonth() - 6);
+          break;
+        case '1year':
+          dateLimit.setFullYear(dateLimit.getFullYear() - 1);
+          break;
+        default:
+          dateLimit = new Date(0);
+          break;
+      }
+      return dateLimit;
+    }
+
+    function renderTable(data) {
+      tableBody.innerHTML = '';
+      if (data.length === 0) {
+        tableBody.innerHTML =
+          '<tr><td colspan="8" class="no-data">Tidak ada data yang sesuai dengan filter yang dipilih</td></tr>';
+        return;
+      }
+
+      let rowNum = 1;
+      data.forEach(entry => {
+        const formattedTimestamp = formatTimestamp(entry.timestamp);
+
+        let stSlopeLabel = '';
+        const stSlopeValue = String(entry.ST_Slope);
+        switch (stSlopeValue) {
+          case '0':
+            stSlopeLabel = 'Down';
+            break;
+          case '1':
+            stSlopeLabel = 'Flat';
+            break;
+          case '2':
+            stSlopeLabel = 'Up';
+            break;
+          default:
+            stSlopeLabel = 'N/A';
+        }
+
+        let sexLabel = '';
+        const sexValue = String(entry.Sex);
+        switch (sexValue) {
+          case '1':
+            sexLabel = 'L';
+            break;
+          case '2':
+            sexLabel = 'P';
+            break;
+          default:
+            sexLabel = 'N/A';
+        }
+
+        let predictionLabel = '';
+        const predictionValue = String(entry.Prediction);
+        switch (predictionValue) {
+          case '1':
+            predictionLabel = 'Berpeluang';
+            break;
+          case '2':
+            predictionLabel = 'Tidak Berpeluang';
+            break;
+          default:
+            predictionLabel = 'N/A';
+        }
+
+        const row = `
+            <tr>
+                <td>${rowNum++}</td>
+                <td>${entry.Age ?? 'N/A'}</td>
+                <td>${sexLabel}</td>
+                <td>${entry.Blood_Pressure ?? 'N/A'}</td>
+                <td>${stSlopeLabel}</td>
+                <td>${entry.Max_HR ?? 'N/A'}</td>
+                <td>${predictionLabel}</td>
+                <td>${formattedTimestamp}</td>
+            </tr>
+        `;
+        tableBody.insertAdjacentHTML('beforeend', row);
+      });
+    }
+
+    async function updateTable(sortOrder = null) {
+      const timeFilter = document.getElementById('filterSelect').value;
+      const sortColumn = document.getElementById('sortColumn').value;
+
+      try {
+        const snapshot = await get(sensorRef);
+        if (!snapshot.exists()) {
+          tableBody.innerHTML =
+            '<tr><td colspan="8" class="no-data">Tidak ada data sensor tersedia di database</td></tr>';
+          return;
+        }
+
+        const sensorData = snapshot.val();
+
+        let allEntries = Object.values(sensorData);
+        let filteredData = allEntries.filter(
+          entry => entry && String(entry.idmicro) === user_idmicro
+        );
+
+        const dateLimit = getDateLimit(timeFilter);
+        if (timeFilter !== 'alltime') {
+          filteredData = filteredData.filter(entry => {
+            if (!entry || !entry.timestamp) return false;
+            const normalizedTimestamp = normalizeTimestamp(entry.timestamp);
+            try {
+              const entryDate = new Date(normalizedTimestamp);
+              if (isNaN(entryDate.getTime())) return false;
+              return entryDate.getTime() >= dateLimit.getTime();
+            } catch (e) {
+              console.error("Error parsing date for filtering:", normalizedTimestamp, e);
+              return false;
+            }
+          });
+        }
+
+        if (sortOrder) {
+          filteredData.sort((a, b) => {
+            if (!a || !b) return 0;
+
+            let aValue, bValue;
+
+            if (sortColumn === 'timestamp') {
+              try {
+                aValue = new Date(normalizeTimestamp(a.timestamp || 0)).getTime();
+                bValue = new Date(normalizeTimestamp(b.timestamp || 0)).getTime();
+                if (isNaN(aValue)) aValue = (sortOrder === 'asc' ? Infinity : -Infinity);
+                if (isNaN(bValue)) bValue = (sortOrder === 'asc' ? Infinity : -Infinity);
+              } catch {
+                aValue = (sortOrder === 'asc' ? Infinity : -Infinity);
+                bValue = (sortOrder === 'asc' ? Infinity : -Infinity);
+              }
+            } else {
+              aValue = parseFloat(a[sortColumn]);
+              bValue = parseFloat(b[sortColumn]);
+              if (isNaN(aValue)) aValue = (sortOrder === 'asc' ? Infinity : -Infinity);
+              if (isNaN(bValue)) bValue = (sortOrder === 'asc' ? Infinity : -Infinity);
+            }
+
+            if (aValue < bValue) return (sortOrder === 'asc') ? -1 : 1;
+            if (aValue > bValue) return (sortOrder === 'asc') ? 1 : -1;
+            return 0;
+          });
+        } else {
+          filteredData.sort((a, b) => {
+            if (!a || !b) return 0;
+            try {
+              const aTime = new Date(normalizeTimestamp(a.timestamp || 0)).getTime();
+              const bTime = new Date(normalizeTimestamp(b.timestamp || 0)).getTime();
+              if (isNaN(aTime)) return 1;
+              if (isNaN(bTime)) return -1;
+              return bTime - aTime;
+            } catch {
+              return 0;
+            }
+          });
+        }
+
+        renderTable(filteredData);
+
+      } catch (error) {
+        console.error("Error fetching or processing data: ", error);
+        tableBody.innerHTML =
+          '<tr><td colspan="8" class="no-data" style="color: #e74c3c;">Gagal memuat data. Silakan coba lagi.</td></tr>';
+      }
+    }
+
+    document.getElementById('filterSelect').addEventListener('change', () => updateTable());
+    document.getElementById('sortColumn').addEventListener('change', () => updateTable());
+    document.getElementById('sortAsc').addEventListener('click', () => updateTable('asc'));
+    document.getElementById('sortDesc').addEventListener('click', () => updateTable('desc'));
+
+    updateTable();
+  </script>
+</body>
+</html>
