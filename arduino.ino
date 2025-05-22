@@ -326,6 +326,14 @@ void updateUsiaDisplay() {
 }
 
 void sex() {
+  waktu = getTimestamp();
+  delay(1000);
+  Serial.print("Waktu dari NTP (RTC online): ");
+  Serial.println(waktu);
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
+  Serial.println("WiFi dimatikan!");
+  lcd.clear();
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Jenis Kelamin:");
@@ -663,14 +671,6 @@ void resetDetection() {
 }
 
 void heartRate() {
-  waktu = getTimestamp();
-  delay(1000);
-  Serial.print("Waktu dari NTP (RTC online): ");
-  Serial.println(waktu);
-  WiFi.disconnect(true);
-  WiFi.mode(WIFI_OFF);
-  Serial.println("WiFi dimatikan!");
-  lcd.clear();
   while (true) {
     lcd.setCursor(0, 0);
     lcd.print("Detak per Menit");
@@ -802,18 +802,18 @@ void konfirmasiUlang() {
       break;
     }
     if (isButtonPressed(buttonRight) && confirmYes) {
-//      if (ValueID != 0 && ValueAge != 0 && ValueSex != 0 && ValueBP != 0 &&
-//          ValueHR != 0 && ValueST != "Unkown") {
-//        NaiveBayes();
-//        break;
-//      } else {
-//        lcd.setCursor(0, 1);
-//        lcd.print(" Lengkapi data! ");
-//        delay(2000);
-//        konfirmasiUlang();
-//        return;
-//      }
-    NaiveBayes();
+      if (ValueID != 0 && ValueAge != 0 && ValueSex != 0 && ValueBP != 0 &&
+          ValueHR != 0 && ValueST != "Unkown") {
+        NaiveBayes();
+        break;
+      } else {
+        lcd.setCursor(0, 1);
+        lcd.print(" Lengkapi data! ");
+        delay(2000);
+        konfirmasiUlang();
+        return;
+      }
+   // NaiveBayes();
     }
   }
 }
