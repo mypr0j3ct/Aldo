@@ -78,6 +78,7 @@ int ValueAge = 0;
 bool isMale = true;
 String ValueSex = "M";
 const unsigned long updateInterval = 1000;
+String ValueConvSex, ValueConvST, ValueConvPred; 
 int motor = 15;
 int solenoid = 2;
 int mark = 0;
@@ -169,6 +170,7 @@ float getProbabilitySex(String sex, String condition);
 float getProbabilityRestingBP(int bp, String condition);
 float getProbabilityMaxHR(int hr, String condition);
 float getProbabilitySTSlope(String slope, String condition);
+void konversi(String ValueSex, String ValueST, String ValuePred);
 void saveSelectedDataToJson(int ValueID, int ValueAge, int ValueBP, int ValueHR, String ValueSex, String ValueST, String ValuePred, String waktu);
 
 void setup() {
@@ -834,7 +836,8 @@ void NaiveBayes() {
   lcd.print(probYes > probNo ? "Berpeluang" : "Tdk Berpeluang");
   ValuePred = (probYes > probNo) ? "Berpeluang" : "Tidak Berpeluang";
   melihat();
-  saveSelectedDataToJson(ValueID, ValueAge, ValueBP, ValueHR, ValueSex, ValueST, ValuePred, waktu);
+  konversi(ValueSex,ValueST, ValuePred);
+  saveSelectedDataToJson(ValueID, ValueAge, ValueBP, ValueHR, ValueConvSex, ValueConvST, ValueConvPred, waktu);
   printSavedData();
   delay(2000);
   lcd.clear();
@@ -1281,6 +1284,34 @@ void setupFirebase() {
   config.token_status_callback = tokenStatusCallback;
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
+}
+
+void konversi(String ValueSex, String ValueST, String ValuePred) {
+    if (ValueSex == "M") {
+        ValueConvSex = "1";
+    } else if (ValueSex == "F") {
+        ValueConvSex = "2";
+    } else {
+        ValueConvSex = "5"; 
+    }
+
+    if (ValuePred == "Tidak Berpeluang") {
+        ValueConvPred = "2";
+    } else if (ValuePred == "Berpeluang") {
+        ValueConvPred = "1";
+    } else {
+        ValueConvPred = "5"; 
+    }
+
+    if (ValueST == "Up") {
+        ValueConvST = "2";
+    } else if (ValueST == "Down") {
+        ValueConvST = "0";
+    } else if (ValueST == "Flat") {
+        ValueConvST = "1";
+    } else if (ValueST == "Unknown") {
+        ValueConvST = "5";
+    }
 }
 
 void saveSelectedDataToJson(int ValueID, int ValueAge, int ValueBP, int ValueHR, String ValueSex, String ValueST, String ValuePred, String waktu) {
