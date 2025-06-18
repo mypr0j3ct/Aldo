@@ -128,6 +128,227 @@ int ValueHR = 0;
 int avg = 0;
 String ValuePred;
 
+// ===================================================================================
+// == KODE HTML & CSS UNTUK WI-FI MANAGER DITANAMKAN DI SINI (EMBEDDED)
+// ===================================================================================
+const char wifiManager_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ESP Wi-Fi Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    
+    body { 
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .topnav { 
+      background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%);
+      padding: 30px 20px;
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .topnav::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="wifi" patternUnits="userSpaceOnUse" width="20" height="20"><path d="M10 2c4.4 0 8 3.6 8 8s-3.6 8-8 8-8-3.6-8-8 3.6-8 8-8zm0 2c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6-2.7-6-6-6z" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23wifi)"/></svg>') repeat;
+      opacity: 0.1;
+    }
+    
+    h1 { 
+      color: white;
+      font-size: 2.5rem;
+      font-weight: 700;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      position: relative;
+      z-index: 1;
+    }
+    
+    .content { 
+      width: 100%;
+      max-width: 500px;
+    }
+    
+    .card-grid { 
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    
+    .card { 
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 0 0 20px 20px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    form {
+      width: 100%;
+    }
+    
+    label { 
+      font-weight: 600;
+      color: #2c3e50;
+      display: block;
+      margin-bottom: 8px;
+      font-size: 1.1rem;
+      position: relative;
+    }
+    
+    label::before {
+      content: '';
+      position: absolute;
+      left: -25px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 20px;
+      background: linear-gradient(135deg, #1abc9c, #16a085);
+      border-radius: 2px;
+    }
+    
+    input[type=text], input[type=password] { 
+      width: 100%;
+      padding: 16px 20px;
+      margin: 8px 0 24px 0;
+      border: 2px solid #e0e6ed;
+      border-radius: 12px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(5px);
+    }
+    
+    input[type=text]:focus, input[type=password]:focus {
+      outline: none;
+      border-color: #1abc9c;
+      box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.1);
+      transform: translateY(-2px);
+      background: white;
+    }
+    
+    input[type=text]::placeholder, input[type=password]::placeholder {
+      color: #95a5a6;
+      font-style: italic;
+    }
+    
+    input[type=submit] { 
+      background: linear-gradient(135deg, #1abc9c 0%, #16a085 100%);
+      color: white;
+      padding: 18px 20px;
+      margin: 20px 0 0 0;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 25px rgba(26, 188, 156, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    input[type=submit]:hover { 
+      background: linear-gradient(135deg, #16a085 0%, #1abc9c 100%);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(26, 188, 156, 0.4);
+    }
+    
+    input[type=submit]:active {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(26, 188, 156, 0.3);
+    }
+    
+    input[type=submit]::before {
+      content: '🌐';
+      margin-right: 10px;
+      font-size: 1.1rem;
+    }
+    
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .card {
+        padding: 30px 20px;
+      }
+      h1 {
+        font-size: 2rem;
+      }
+      .topnav {
+        padding: 20px 15px;
+      }
+    }
+    
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .card { animation: fadeInUp 0.6s ease-out; }
+    .topnav { animation: fadeInUp 0.4s ease-out; }
+    
+    .card-grid { animation: float 6s ease-in-out infinite; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="topnav">
+    <h1>ESP Wi-Fi Manager</h1>
+  </div>
+  <div class="content">
+    <div class="card-grid">
+      <div class="card">
+        <form action="/" method="POST">
+          <p>
+            <label for="ssid">SSID</label>
+            <input type="text" id="ssid" name="ssid"><br>
+            <label for="pass">Password</label>
+            <input type="password" id="pass" name="pass"><br>
+            <input type="submit" value="Ubah Wifi">
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+)rawliteral";
+// ===================================================================================
+
 float probYes = 0.5533769;
 float probNo = 0.4466231;
 
@@ -175,7 +396,7 @@ void saveSelectedDataToJson(String ValueID, int ValueAge, int ValueBP, int Value
 
 void setup() {
   Serial.begin(115200);
-  lcd.begin();
+  lcd.init();
   lcd.backlight();
   pinMode(buttonUp, INPUT_PULLUP);
   pinMode(buttonDown, INPUT_PULLUP);
@@ -1171,15 +1392,17 @@ void startWiFiSetup() {
   IPAddress IP = WiFi.softAPIP();
   Serial.print("AP IP address: ");
   Serial.println(IP); 
+  
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("WiFi Setup");
   lcd.setCursor(0, 1);
   lcd.print(IP.toString());
+
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(LittleFS, "/wifimanager.html", "text/html");
+    request->send_P(200, "text/html", wifiManager_html);
   });
-  server.serveStatic("/", LittleFS, "/");
+
   server.on("/", HTTP_POST, [](AsyncWebServerRequest *request) {
     int params = request->params();
     for (int i = 0; i < params; i++) {
@@ -1203,18 +1426,21 @@ void startWiFiSetup() {
         }
       }
     }
+    
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("WiFi Tersimpan!");
     lcd.setCursor(0, 1);
     lcd.print("Restart ESP32...");
+
     request->send(200, "text/plain",
       "WiFi berhasil dikonfigurasi!\n"
-      "ESP32 akan restart dalam 3 detik...\n"
-      "Hubungkan ke router Anda, lalu akses IP: " + ip);
+      "ESP32 akan restart dalam 3 detik...");
+      
     delay(3000);
     ESP.restart();
   });
+
   server.begin();
 }
 
